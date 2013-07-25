@@ -23,20 +23,28 @@ state.info$state.name<-tolower(state.info$state.name)
 states<-merge(us_state, state.info, by.x="region", by.y="state.name", all.x=TRUE)
 
 #merge outbreak data to state file
-choro <- merge(states, statelist, sort = FALSE, by.x="state.abb", by.y = "State")
+choro <- merge(states, statelist, sort = FALSE, by.x="state.abb", by.y = "State", all.x=TRUE)
 choro <- choro[order(choro$order), ] 
 
 #plot the map
 library(lubridate)
 library(ggplot2)
 
-ggplot(choro, aes(long, lat, group = group))+  
-geom_polygon(data=statesblank, fill="darkgray")+
-geom_polygon(aes( fill = Freq))+theme_nothing(legend=TRUE)+
-coord_map("lagrange") +   
-scale_fill_gradient2(low="darkgray", high="red", guide="colorbar")+
-ggtitle("Num. of reported Salmonella cases by state,\n Upload Dates: Jan 8 2012 to May 16 2012\n(not shown: 3 cases in Hawaii)")
+choro$Freq2<-as.character(cut(choro$Freq, breaks=c(0,10,20,30,40,50,60), labels=c("1-9","10-19","20-29","30-39","40-49","50-59")))
+choro$Freq2<-as.factor(ifelse(is.na(choro$Freq), "None\nReported", as.character(choro$Freq2))) 
+cols<-c("None\nReported"="#FFFFFF", "1-9"="#D0D1E6", "10-19"="#A6BDDB", "20-29"="#74A9CF","30-39"="#3690C0","40-49"="#0570B0","50-59"="#034E7B")
 
+map_county<-map_data("county")
+
+
+ggplot(choro, aes(long, lat, group = group))+  
+  geom_polygon(data=statesblank, fill="white")+
+  geom_polygon(aes( fill = Freq2))+theme_nothing(legend=TRUE)+
+  geom_polygon(data=map_county, fill=NA, colour="white", size=0.05, alpha=0.9)+
+  geom_polygon(data=statesblank,fill=NA, colour="darkgray", size=0.1)+
+  coord_map("lagrange") +   
+  scale_fill_manual(values=cols, breaks=c("None\nReported","1-9","10-19","20-29","30-39","40-49","50-59"),guide = guide_legend(reverse=TRUE), name="Number\nof Cases")+
+  ggtitle("Number of reported Salmonella Typhimurium cases by state:\n PulseNet Upload Dates: Jan 8 to Apr 26 2012\n(1 case in Hawaii not shown)")
 
 
 #EPI CURVES
